@@ -2,40 +2,41 @@ const abi = require("./abi.json");
 const { token } = require('./config.json');
 
 const ethers = require('ethers');
-const { Client, Intents, MessageEmbed, MessageAttachment } = require('discord.js');
+const { Client, Intents, GatewayIntentBits, MessageAttachment } = require('discord.js');
 
 require('dotenv').config();
 
+// #mint-and-reveal: 1138191803095449702
+
 const network = {
-  name: "polygon",
-  chainId: 137,
+  name: "ethereum",
+  chainId: 1,
   _defaultProvider: (providers) => new providers.JsonRpcProvider(process.env.ALCHEMY_URL)
 };
 
 const provider = ethers.getDefaultProvider(network);
-const aavegotchiDiamond = new ethers.Contract('0x86935F11C86623deC8a25696E1C19a8659CbF95d', abi, provider);
+const scrollsContract = new ethers.Contract('0xcE8169a6fb6770C0c6D411A734DD6d74bB241097', abi, provider);
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 
 client.once('ready', async () => {
   console.log('Ready!', Date.now());
 
-  const discordChannel = client.channels.cache.get('966574057279610930');
+  const discordChannel = client.channels.cache.get('1167483429139513384');
 
-  aavegotchiDiamond.on("GotchiLendingAdd", async (listingId) => {
-    const lendingInfo = await aavegotchiDiamond.getGotchiLendingListingInfo(listingId);
+  // TODO: mention @taisheen //<@763073740136513577>
+  // TODO: mention Zkitty @556699524203151363
 
-    if (lendingInfo.listing_.thirdParty == '0xE237122dbCA1001A9A3c1aB42CB8AE0c7bffc338' && lendingInfo.listing_.revenueSplit[2] >= 1) {
-      const name = lendingInfo.aavegotchiInfo_.name;
-      const ghst = ethers.utils.formatEther(lendingInfo.listing_.initialCost);
-      const duration = lendingInfo.listing_.period / 3600;
-      const split = `${lendingInfo.listing_.revenueSplit[0]}-${lendingInfo.listing_.revenueSplit[1]}-${lendingInfo.listing_.revenueSplit[2]}`;
-      const url = `https://app.aavegotchi.com/lending/${lendingInfo.listing_.listingId}`;
+  // when the public mint happens
+  scrollsContract.on("Transfer", async (from, to ,tokenId) => {
+    const callTaisheen =
+      Number(tokenId.toString()) > 3800
+      ? '<@763073740136513577> <@556699524203151363> Be ready for breakTransfer()!'
+      : '';
 
-      discordChannel.send(
-        `Gotchi ${name} has been listed for rent: ${ghst} GHST, for ${duration} hours, at ${split} - ${url}`
-      );
-    }
+    discordChannel.send(
+      `New mint! ${tokenId.toString()}. ${callTaisheen}`
+    );
   });
 
 });
